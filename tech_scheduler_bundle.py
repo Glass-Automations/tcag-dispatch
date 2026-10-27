@@ -64,11 +64,14 @@ def main():
     page = HERE / 'tech_scheduler_v2.html'
     cache = HERE / f'tech_scheduler_data{sfx}.json'
     config = HERE / f'tech_config{sfx}.json'
-    for f in (page, cache):
+    # --json-only never reads the page, so don't demand it. The data feed runs in
+    # CI where only the sync and this script are checked out.
+    required = (cache,) if args.json_only else (page, cache)
+    for f in required:
         if not f.exists():
             sys.exit(f'missing {f.name}')
 
-    html = page.read_text()
+    html = page.read_text() if not args.json_only else ''
     data = json.loads(cache.read_text())
     cfg = json.loads(config.read_text()) if config.exists() else {}
 
