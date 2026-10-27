@@ -36,7 +36,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   sync:
@@ -108,20 +108,42 @@ jobs:
       # Published to a single-commit orphan branch. Force-pushing one snapshot
       # means the repo never accumulates months of 30-minute checkpoints, so
       # switching the repo private later leaves no back-catalogue behind.
-      # Published to a SECRET GIST, not to this repo. The repo is private so its
-      # raw URLs need auth and a browser cannot read them; a secret gist has an
-      # unguessable URL, serves CORS headers, and the filename-only raw URL always
-      # returns the latest revision (verified: it tracks updates, with a 5-minute
-      # CDN cache). Gists are owned by a person, not an org - this one belongs to
-      # the account whose token is in GIST_TOKEN.
-      - name: Publish to gist
+      # Published to a single-commit orphan branch, force-pushed, so the repo
+      # never accumulates months of 15-minute checkpoints.
+      #
+      # (A secret-gist publisher is the intended replacement, for when the repo
+      # goes private - private raw URLs need auth and a browser cannot read them.
+      # It is not wired up yet: it needs a GIST_ID and a GIST_TOKEN. Do not switch
+      # to it until both exist, or publishing stops dead as it did on run
+      # 40515130238.)
+      - name: Publish
         env:
-          GH_TOKEN: ${{ secrets.GIST_TOKEN }}
-          GIST_ID: ${{ vars.GIST_ID }}
           DATA_FILE: ${{ vars.DATA_FILE }}
         run: |
-          test -n "$GIST_ID"    || { echo "::error::vars.GIST_ID is not set"; exit 1; }
-          test -n "$GH_TOKEN"   || { echo "::error::secrets.GIST_TOKEN is not set"; exit 1; }
-          gh gist edit "$GIST_ID" -f "$DATA_FILE" "$DATA_FILE"
-          echo "published $(du -h "$DATA_FILE" | cut -f1) to gist $GIST_ID"
+          git config user.name  'omega-sync'
+          git config user.email 'omega-sync@users.noreply.github.com'
+          # The steps below wipe the working tree. That would take the Omega cache
+          # file with it, leaving actions/cache nothing to save - every run would
+          # then start cold and do an 11-minute full rebuild. Stash both first.
+          cp "$DATA_FILE" "$RUNNER_TEMP/payload.json"
+          cp tech_scheduler_data_tcag.json "$RUNNER_TEMP/omega-cache.json"
+          git checkout --orphan publish
+          git rm -rf --cached . > /dev/null 2>&1 || true
+          find . -maxdepth 1 ! -name . ! -name .git -exec rm -rf {} +
+          cp "$RUNNER_TEMP/payload.json" "$DATA_FILE"
+          git add "$DATA_FILE"
+          git commit -m "data snapshot $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push -f origin publish
+
+      # actions/cache saves in a post step that runs after every step above, so
+      # the cache file has to be back on disk by now or it saves empty.
+      - name: Put the working cache back for actions/cache
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/omega-cache.json" ]; then
+            cp "$RUNNER_TEMP/omega-cache.json" tech_scheduler_data_tcag.json
+            echo "restored $(du -h tech_scheduler_data_tcag.json | cut -f1) for caching"
+          else
+            echo "no stashed cache (sync likely failed earlier); nothing to restore"
+          fi
 
