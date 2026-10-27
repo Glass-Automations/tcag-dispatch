@@ -1,0 +1,7 @@
+# The working cache carries customer names, phones and home addresses.
+# It lives in the Actions cache, never in git.
+tech_scheduler_data_tcag.json
+tech_scheduler_data.json
+tech_scheduler_bundle*.html
+*.log
+*.lock

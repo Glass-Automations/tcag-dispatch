@@ -1,0 +1,512 @@
+{
+ "techs": {
+  "ADMIN": {
+   "name": "ADMIN ADMIN",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "KAndersen": {
+   "name": "Kim Andersen",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "HBergquist": {
+   "name": "Hannah Bergquist",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "DBergstrom": {
+   "name": "Darrin Bergstrom",
+   "start": "Starts at TCAG Burnsville",
+   "caps": "",
+   "territory": "S. Metro: Lup Chev Bloom, Bville Shop",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "TCasoria": {
+   "name": "Tim Casoria",
+   "start": "Starts in Princeton",
+   "caps": "",
+   "territory": "North: Eich, Complete Big Lake, Princeton",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "CChambers": {
+   "name": "Carli Chambers",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "scrapser": {
+   "name": "Stacy Crapser",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "CElliot": {
+   "name": "Carl Elliot",
+   "start": "Starts at PGW Fridley",
+   "caps": "",
+   "territory": "North Metro: LCC, Tama Glass",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "TFleury": {
+   "name": "Tom Fleury",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "CFleury": {
+   "name": "Carter Fleury",
+   "start": "Starts at PGW St Paul",
+   "caps": "",
+   "territory": "St Paul, West St Paul, Inver Grove Heights, Cottage Grove",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "GGirard": {
+   "name": "Grant Girard",
+   "start": "Starts at St Cloud- Starts at 8:30",
+   "caps": "",
+   "territory": "North: Eich, Complete Big Lake, Princeton",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "JGirard": {
+   "name": "Jesse Girard",
+   "start": "Starts at St Cloud",
+   "caps": "",
+   "territory": "St Cloud, St Augusta, Clearwater, Becker",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "cgiusseppi": {
+   "name": "Cathy Giusseppi",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "GHang": {
+   "name": "Ger Hang",
+   "start": "Starts at PGW St Paul",
+   "caps": "",
+   "territory": "Spring Lake Park, Fridley, Columbia Heights, MPLS, Roseville",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "CHarvey": {
+   "name": "Cale Harvey",
+   "start": "Chip Tech",
+   "caps": "",
+   "territory": "Mobile repairs - North Metro",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "AHarvey": {
+   "name": "Aaron Harvey",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "JOlivo": {
+   "name": "Jose Hidalgo Olivo",
+   "start": "Starts at PGW St Paul",
+   "caps": "",
+   "territory": "East Metro: Mobile around WBL Shop",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "JHigby": {
+   "name": "Jason Higby",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "HJohnson": {
+   "name": "Holly Johnson",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "JadenLancman": {
+   "name": "Jaden Lancman",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "JLancman": {
+   "name": "Jayme Lancman",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "HLeonard": {
+   "name": "Heidi Leonard",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "RLundquist": {
+   "name": "Rob Lundquist",
+   "start": "Starts at TCAG Burnsville",
+   "caps": "",
+   "territory": "S. Metro: Lup Chev Bloom, Bville Shop",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "SMarmolejo": {
+   "name": "Samantha Marmolejo",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "JMclain": {
+   "name": "Jackson McLain",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "NMcLain": {
+   "name": "Nick McLain",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "AMitteness": {
+   "name": "Ashley Mitteness",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "JMoua": {
+   "name": "Jessica Moua",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "tmoua": {
+   "name": "Tino Moua",
+   "start": "Starts at WBL Shop",
+   "caps": "",
+   "territory": "East Metro:  WBL Shop, Roseville, Maplewood, St Paul",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "CMount": {
+   "name": "Chris Mount",
+   "start": "Chip Tech",
+   "caps": "",
+   "territory": "Monticello / Elk River / Rogers / Coon Rapids",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "BNapier": {
+   "name": "Bill Napier",
+   "start": "Starts at WBL Shop",
+   "caps": "",
+   "territory": "East Metro: WBL Shop",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "PNielsen": {
+   "name": "Paul Nielsen",
+   "start": "Starts at St Cloud",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "JNorman": {
+   "name": "Jeremy Norman",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "GlassAutomations": {
+   "name": "Dane Oborn",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "HOlson": {
+   "name": "Holden Olson",
+   "start": "Starts at Hudson",
+   "caps": "",
+   "territory": "East Metro/WI: Abra Hudson",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "KOlson": {
+   "name": "Kelly Olson",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "rpavek": {
+   "name": "Randy Pavek",
+   "start": "Starts at PGW ST Paul",
+   "caps": "",
+   "territory": "North St Paul, St Paul, Oakdale, Maplewood, Woodbury",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "JPeters": {
+   "name": "Justin Peters",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "DRomann": {
+   "name": "Dustin Romann",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "MRychly": {
+   "name": "Michele Rychly",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "BSchaffler": {
+   "name": "Brent Schaffler",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "SSchrul": {
+   "name": "Shannon Schrul",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "mschwartz": {
+   "name": "Mark Schwartz",
+   "start": "Starts at WBL Shop",
+   "caps": "",
+   "territory": "White Bear Lake, Forest Lake",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "tims": {
+   "name": "Tim Stodolka",
+   "start": "Starts at PGW Fridley",
+   "caps": "",
+   "territory": "West Metro: Lup GMC BP, LCC",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "JStodolka": {
+   "name": "Jason Stodolka",
+   "start": "Starts at PGW Fridley",
+   "caps": "",
+   "territory": "West/North Metro: Lup GMC BP, LCC, Tama",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "MTeske": {
+   "name": "Mark Teske",
+   "start": "Parts runner, help with 2 man sets",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "TThorn": {
+   "name": "Tony Thorn",
+   "start": "Starts at PGW St Paul",
+   "caps": "",
+   "territory": "Carmax Brooklyn Park, Manheim Maple Grove",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "rtrewick": {
+   "name": "Robert Trewick",
+   "start": "Chip Tech",
+   "caps": "",
+   "territory": "Mobile repairs - South Metro",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "EWalker": {
+   "name": "Erik Walker",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "JWeidenbach": {
+   "name": "Joy Weidenbach",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "LWilliams": {
+   "name": "Lucia Williams",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "LWolfe": {
+   "name": "Lucas Wolfe",
+   "start": "Starts at Hudson",
+   "caps": "",
+   "territory": "East Metro/WI: Hudson",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "syurecko": {
+   "name": "Susan Yurecko",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "VZavala": {
+   "name": "Vicente Zavala",
+   "start": "Starts at TCAG Burnsville",
+   "caps": "",
+   "territory": "East Metro: St Paul, Inver Grove Heights",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "RZeller": {
+   "name": "Rob Zeller",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  },
+  "PKenow": {
+   "name": "Patty Kenow",
+   "start": "",
+   "caps": "",
+   "territory": "",
+   "off": [],
+   "order": 100,
+   "hide": false
+  }
+ },
+ "updated": "2026-10-26T17:58:49",
+ "source": "September 2026 Tech Scheduler.xlsx + Omega /Users",
+ "groupBy": "none",
+ "omegaFolder": "twincities"
+}

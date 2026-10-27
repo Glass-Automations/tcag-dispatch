@@ -1,0 +1,118 @@
+name: Omega sync
+
+# Keeps the published dispatch-board data current.
+#
+# TWO FILES, DELIBERATELY SEPARATED:
+#   tech_scheduler_data_tcag.json    full cache - customer names, phones, home
+#                                    addresses. NEVER committed. Lives only in the
+#                                    Actions cache between runs.
+#   tcag-<slug>.json                 scrubbed, windowed. The only thing published.
+#
+# If you ever change this workflow, keep that separation. Committing the working
+# cache to a public repo would publish every TCAG customer's home address.
+
+on:
+  schedule:
+    # Light refresh every 30 min, 06:00-18:30 US Central, Mon-Sat.
+    # Cron is UTC; this is CDT (UTC-5). In winter the window shifts an hour earlier.
+    - cron: '*/30 11-23 * * 1-6'
+    # Nightly deep scan + 60-day reconcile at 03:15 Central.
+    - cron: '15 8 * * *'
+  workflow_dispatch:
+    inputs:
+      full:
+        description: 'Run a full id-walk instead of a light refresh'
+        type: boolean
+        default: false
+
+concurrency:
+  # Two overlapping syncs would double the request rate and 429 the key,
+  # failing both. Queue instead of running in parallel.
+  group: omega-sync
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      # The working cache persists here rather than in git, so the PII in it is
+      # never committed. A unique key each run with a prefix restore-key means we
+      # always reload the newest and always save a fresh one.
+      - name: Restore Omega cache
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: tech_scheduler_data_tcag.json
+          key: omega-cache-tcag-${{ github.run_id }}
+          restore-keys: omega-cache-tcag-
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Decide run type
+        id: mode
+        run: |
+          # A cold cache cannot be refreshed incrementally - there is no max_id and
+          # nothing to reconcile against - so rebuild it properly.
+          if [ ! -f tech_scheduler_data_tcag.json ]; then
+            echo "args=--full --depth 3000" >> "$GITHUB_OUTPUT"
+            echo "why=cold cache, full rebuild" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "15 8 * * *" ] || [ "${{ inputs.full }}" = "true" ]; then
+            echo "args=--full --depth 3000" >> "$GITHUB_OUTPUT"
+            echo "why=nightly deep scan" >> "$GITHUB_OUTPUT"
+          else
+            echo "args=--light" >> "$GITHUB_OUTPUT"
+            echo "why=intraday light refresh" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Sync from Omega
+        env:
+          OMEGA_API_KEY: ${{ secrets.OMEGA_API_KEY }}
+        run: |
+          echo "::notice::${{ steps.mode.outputs.why }}"
+          python3 tech_scheduler_sync.py --profile tcag ${{ steps.mode.outputs.args }}
+
+      - name: Build the published file
+        run: |
+          python3 tech_scheduler_bundle.py --profile tcag \
+            --back 2 --ahead 14 --json-only --out "${{ vars.DATA_FILE }}"
+
+      - name: Verify no PII escaped
+        run: |
+          # Belt and braces. If a future edit ever drops the scrubbing, fail loudly
+          # rather than quietly publishing customer addresses.
+          python3 - <<'PY'
+          import json, os, sys
+          f = os.environ['DATA_FILE']
+          d = json.load(open(f))
+          bad = [k for k in ('customer', 'phone', 'address')
+                 if any(a.get(k) for a in d['appointments'].values())]
+          if bad:
+              sys.exit(f'REFUSING TO PUBLISH: {f} still contains {bad}')
+          print(f'{f}: {len(d["appointments"])} appointments, no PII fields present')
+          PY
+        env:
+          DATA_FILE: ${{ vars.DATA_FILE }}
+
+      # Published to a single-commit orphan branch. Force-pushing one snapshot
+      # means the repo never accumulates months of 30-minute checkpoints, so
+      # switching the repo private later leaves no back-catalogue behind.
+      - name: Publish
+        run: |
+          git config user.name  'omega-sync'
+          git config user.email 'omega-sync@users.noreply.github.com'
+          cp "${{ vars.DATA_FILE }}" /tmp/payload.json
+          git checkout --orphan publish
+          git rm -rf --cached . > /dev/null 2>&1 || true
+          find . -maxdepth 1 ! -name . ! -name .git -exec rm -rf {} +
+          cp /tmp/payload.json "${{ vars.DATA_FILE }}"
+          git add "${{ vars.DATA_FILE }}"
+          git commit -m "data snapshot $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push -f origin publish
