@@ -112,11 +112,29 @@ jobs:
         run: |
           git config user.name  'omega-sync'
           git config user.email 'omega-sync@users.noreply.github.com'
-          cp "${{ vars.DATA_FILE }}" /tmp/payload.json
+          # This step wipes the working tree to build a clean single-file commit.
+          # That would take the Omega cache file with it, leaving actions/cache
+          # nothing to save on its post step - so every run would start cold and
+          # do an 11-minute full rebuild instead of a 20-second light one.
+          # Stash both files outside the tree first.
+          cp "${{ vars.DATA_FILE }}" "$RUNNER_TEMP/payload.json"
+          cp tech_scheduler_data_tcag.json "$RUNNER_TEMP/omega-cache.json"
           git checkout --orphan publish
           git rm -rf --cached . > /dev/null 2>&1 || true
           find . -maxdepth 1 ! -name . ! -name .git -exec rm -rf {} +
-          cp /tmp/payload.json "${{ vars.DATA_FILE }}"
+          cp "$RUNNER_TEMP/payload.json" "${{ vars.DATA_FILE }}"
           git add "${{ vars.DATA_FILE }}"
           git commit -m "data snapshot $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           git push -f origin publish
+
+      # actions/cache saves in a post step that runs after every step above, so
+      # the file has to be back on disk by now or the cache saves empty.
+      - name: Put the working cache back for actions/cache
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/omega-cache.json" ]; then
+            cp "$RUNNER_TEMP/omega-cache.json" tech_scheduler_data_tcag.json
+            echo "restored $(du -h tech_scheduler_data_tcag.json | cut -f1) for caching"
+          else
+            echo "no stashed cache (sync likely failed earlier); nothing to restore"
+          fi
