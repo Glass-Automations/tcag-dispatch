@@ -25,12 +25,22 @@ public.
 
 ## Schedule
 
-| | When | Cost |
-|---|---|---|
-| Light refresh | every 30 min, 06:00–18:30 US Central, Mon–Sat | ~26 Omega calls, ~20s |
-| Full id-walk | 03:15 US Central daily | ~1,980 calls, ~11 min |
+| | When | Per run | Per day |
+|---|---|---|---|
+| Light refresh + 7-day reconcile | every 15 min, Mon–Sat | ~26 calls, ~20s | 52 runs ≈ 1,350 calls |
+| Full id-walk + 60-day reconcile | 03:15 Central daily | ~1,980 calls, ~11 min | 1 run |
 
-Cron is UTC and does not follow DST, so the window shifts an hour in winter.
+≈3,300 Omega calls/day. Omega bills per business event — accepted EDI
+transactions, VIN lookups, dispatches, SMS — not per API call, and this sync
+only reads existing records, so the schedule is free. Verified against a real
+statement.
+
+Cron is UTC and does not follow DST: hours 11–23 UTC are 06:00–18:45 Central in
+summer, 05:00–17:45 in winter. To cover later afternoons year-round, add hour 0.
+
+GitHub's scheduler is best-effort and drops or delays runs under load, especially
+on the hour. Treat 15 minutes as a target, not a guarantee — the board shows its
+real data age in the header either way.
 
 ## Why the sync looks the way it does
 

@@ -13,9 +13,13 @@ name: Omega sync
 
 on:
   schedule:
-    # Light refresh every 30 min, 06:00-18:30 US Central, Mon-Sat.
-    # Cron is UTC; this is CDT (UTC-5). In winter the window shifts an hour earlier.
-    - cron: '*/30 11-23 * * 1-6'
+    # Light refresh every 15 min, Mon-Sat.
+    # Cron is UTC and does not follow DST, so hours 11-23 UTC are
+    #   06:00-18:45 Central in summer (CDT), 05:00-17:45 Central in winter (CST).
+    # Omega does not bill per API call (confirmed against a real statement), so the
+    # only real limits are the 200/min rate cap - a run uses ~26 calls over ~20s -
+    # and GitHub's own scheduler, which delays or drops runs under load.
+    - cron: '*/15 11-23 * * 1-6'
     # Nightly deep scan + 60-day reconcile at 03:15 Central.
     - cron: '15 8 * * *'
   workflow_dispatch:
