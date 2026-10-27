@@ -504,7 +504,12 @@ def run(args, lock):
             print("reconcile: nothing cached in the forward window yet")
 
     cache["max_id"] = max([int(i) for i in seen] + [known_max])
-    cache["synced_at"] = datetime.datetime.now().isoformat(timespec="seconds")
+    # UTC with an explicit Z. This field is written by two different publishers -
+    # this machine and a GitHub runner - and read by browsers in a third zone.
+    # A naive local timestamp made the board's "synced N min ago" wrong by hours
+    # depending on who published last, which is worse than showing nothing.
+    cache["synced_at"] = (datetime.datetime.now(datetime.timezone.utc)
+                          .strftime("%Y-%m-%dT%H:%M:%SZ"))
     CACHE.write_text(json.dumps(cache, indent=1))
 
     seed_config(cache)
