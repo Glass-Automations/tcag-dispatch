@@ -508,5 +508,6 @@
  "updated": "2026-10-26T17:58:49",
  "source": "September 2026 Tech Scheduler.xlsx + Omega /Users",
  "groupBy": "none",
- "omegaFolder": "twincities"
+ "omegaFolder": "twincities",
+ "timezone": "America/Chicago"
 }

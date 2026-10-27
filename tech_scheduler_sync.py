@@ -11,6 +11,7 @@ individually via GET /Appointments/{id}. This syncs by walking the id space.
   python3 tech_scheduler_sync.py             # incremental
 """
 import argparse, datetime, json, os, pathlib, sys, threading, time, urllib.parse, urllib.request
+from zoneinfo import ZoneInfo
 from concurrent.futures import ThreadPoolExecutor
 
 BASE = "https://app.omegaedi.com/api/2.0"
@@ -26,6 +27,19 @@ def set_profile(name):
         CACHE = HERE / f"tech_scheduler_data_{name}.json"
         CONFIG = HERE / f"tech_config_{name}.json"
 WORKERS = 4
+
+# Omega returns appointment windows as unix timestamps, which are absolute. The
+# wall-clock time a dispatcher expects depends on the SHOP's timezone - not the
+# timezone of whatever machine happens to run this sync.
+#
+# Getting this wrong is silent and total. datetime.fromtimestamp() with no tzinfo
+# uses the local zone, so the same data rendered 07:00 on a Mountain-time laptop
+# and 13:00 on a UTC CI runner, and neither was right: checked against the times
+# dispatchers hand-write into their own notes, 2,943 of 3,014 showed the true time
+# was one hour later than the laptop said. TCAG is Central.
+#
+# Set it per profile in tech_config_<profile>.json as "timezone".
+TZ = None          # set in run(); None means fall back to local with a warning
 
 # Omega enforces 200 req/min and returns 429 once you cross it. Going wider than
 # this does not just slow down - it locks the key out for the rest of the minute,
@@ -123,7 +137,8 @@ def shape(appt):
     s, e = norm_ts(appt.get("requested_window_start")), norm_ts(appt.get("requested_window_end"))
     if not s:
         return None
-    sd, ed = datetime.datetime.fromtimestamp(s), (datetime.datetime.fromtimestamp(e) if e else None)
+    sd = datetime.datetime.fromtimestamp(s, TZ)
+    ed = datetime.datetime.fromtimestamp(e, TZ) if e else None
     veh = " ".join(x for x in (appt.get("vehicle_year"), appt.get("vehicle_make"),
                                appt.get("vehicle_model")) if x).strip()
     return {
@@ -275,6 +290,9 @@ def main():
                          "calls and /SaleItems, which change rarely. ~18 calls, a few "
                          "seconds - cheap enough to run several times an hour.")
     ap.add_argument("--depth", type=int, default=3000, help="ids to walk back on a full scan")
+    ap.add_argument("--tz", default=os.environ.get("OMEGA_TZ"),
+                    help="IANA timezone for the shop, e.g. America/Chicago. "
+                         "Defaults to \"timezone\" in the profile config.")
     ap.add_argument("--reconcile-days", type=int, default=0,
                     help="re-read every cached appointment dated within N days ahead, "
                          "so reschedules, cancellations and tech changes propagate. "
@@ -307,6 +325,24 @@ def main():
 
 
 def run(args, lock):
+    global TZ
+    # The shop's timezone, from the profile config, so every machine that runs
+    # this sync produces identical wall-clock times.
+    tzname = args.tz
+    if not tzname and CONFIG.exists():
+        try:
+            tzname = (json.loads(CONFIG.read_text()) or {}).get("timezone")
+        except Exception:
+            tzname = None
+    if tzname:
+        TZ = ZoneInfo(tzname)
+        print(f"timezone: {tzname}")
+    else:
+        TZ = None
+        print("timezone: NOT SET - falling back to this machine's local zone. "
+              "Times will differ between machines. Set \"timezone\" in the profile "
+              "config (e.g. \"America/Chicago\").", file=sys.stderr)
+
     cache = load_cache()
 
     locations = try_api("/Locations", key=args.key) or []
