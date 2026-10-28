@@ -48,6 +48,11 @@ def main():
     ap.add_argument('--ahead', type=int, default=28, help='days of lookahead to include')
     ap.add_argument('--keep-pii', action='store_true',
                     help='keep customer name, phone, address and raw notes (NOT for a public page)')
+    ap.add_argument('--notes-url', default='',
+
+                    help='Base URL of the dispatch-notes service. Omit and the board '
+
+                         'simply has no notes panel.')
     ap.add_argument('--remote', default='',
                     help='URL of the live cache JSON. Baked into the page: the inlined '
                          'copy paints instantly, then fresh data is fetched over it and '
@@ -94,6 +99,11 @@ def main():
         js = (data.get('invoices') or {}).get(str(a.get('invoice_id') or ''))
         if js:
             b['job_status'] = js
+        # Note COUNT only. The thread bodies hold customer names, phone numbers
+        # and part pricing; this file is public, so they must never travel.
+        nm = (data.get('inv_notes') or {}).get(str(a.get('invoice_id') or ''))
+        if nm and nm.get('n'):
+            b['notes'] = nm['n']
         if b.get('note'):
             s = scrub_note(b['note'])
             if s != b['note']:
@@ -102,6 +112,7 @@ def main():
         kept[k] = b
     data['appointments'] = kept
     data.pop('invoices', None)      # the per-appointment code above is all the board needs
+    data.pop('inv_notes', None)    # ditto - and it carries invoice `updated` stamps
     data['bundled_at'] = datetime.datetime.now().isoformat(timespec='seconds')
     data['pii'] = 'full' if args.keep_pii else 'scrubbed'
     data['window'] = [lo, hi]
@@ -121,8 +132,9 @@ def main():
         return json.dumps(obj, separators=(',', ':')).replace('</', '<\\/')
 
     remote = f'window.__TS_REMOTE__={json.dumps(args.remote)};\n' if args.remote else ''
+    notes  = f'window.__TS_NOTES__={json.dumps(args.notes_url)};\n' if args.notes_url else ''
     inject = (f'<script>window.__TS_DATA__={embed(data)};\n'
-              f'window.__TS_CFG__={embed(cfg)};\n{remote}</script>\n<script>')
+              f'window.__TS_CFG__={embed(cfg)};\n{remote}{notes}</script>\n<script>')
     if '\n<script>\n"use strict";' not in html:
         sys.exit('could not find the board script tag to inject before')
     out_html = html.replace('\n<script>\n"use strict";',

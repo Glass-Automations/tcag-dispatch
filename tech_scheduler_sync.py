@@ -176,7 +176,7 @@ def shape(appt):
     }
 
 
-def sync_invoices(cache, key, back_days, ahead_days, backfill_cap=80):
+def sync_invoices(cache, key, back_days, ahead_days, backfill_cap=80, notes_cap=60):
     """Record each invoice's position in Omega's billing lifecycle.
 
     Omega tracks the JOB separately from the BILL:
@@ -195,6 +195,8 @@ def sync_invoices(cache, key, back_days, ahead_days, backfill_cap=80):
     d1 = (today - datetime.timedelta(days=back_days)).isoformat()
     d2 = (today + datetime.timedelta(days=ahead_days)).isoformat()
     inv = dict(cache.get("invoices") or {})
+    meta = dict(cache.get("inv_notes") or {})
+    stale = []                      # invoices whose note thread may have moved
 
     swept = 0
     for page in range(1, 41):
@@ -204,6 +206,12 @@ def sync_invoices(cache, key, back_days, ahead_days, backfill_cap=80):
             if iid:
                 inv[iid] = r.get("job_status") or ""
                 swept += 1
+                # The list row carries `updated`, so we only pay for a detail
+                # call when something on the invoice actually moved. Steady
+                # state that is a handful per run instead of ~250.
+                up = r.get("updated") or ""
+                if (meta.get(iid) or {}).get("u") != up:
+                    stale.append((iid, up))
         if len(rows) < 100:
             break
 
@@ -220,10 +228,28 @@ def sync_invoices(cache, key, back_days, ahead_days, backfill_cap=80):
         else:
             inv[iid] = ""          # remember we looked, so we stop re-asking
 
+    # How many notes hang off each invoice. Only the COUNT is kept: the bodies
+    # carry customer names, phone numbers and part pricing, and the published
+    # file is public. The count is enough to flag the card; reading the thread
+    # has to go through something that can authenticate.
+    on_board = need & set(inv)
+    stale = [t for t in stale if t[0] in on_board][:notes_cap]
+    noted = 0
+    for iid, up in stale:
+        d = try_api(f"/Invoices/{urllib.parse.quote(iid)}", key=key)
+        if isinstance(d, dict) and d.get("id"):
+            rows = d.get("Notes") or []
+            n = sum(1 for x in rows if not (x or {}).get("deleted"))
+            meta[iid] = {"u": up, "n": n}
+            noted += 1
+
     cache["invoices"] = inv
+    cache["inv_notes"] = meta
     known = len(need & set(inv))
+    with_notes = sum(1 for i in on_board if (meta.get(i) or {}).get("n"))
     print(f"invoices: swept {swept} {d1}..{d2}, backfilled {filled}, "
-          f"{known}/{len(need)} on the board have a billing status")
+          f"{known}/{len(need)} on the board have a billing status; "
+          f"note counts refreshed {noted}, {with_notes} invoices carry notes")
     return inv
 
 
@@ -579,7 +605,8 @@ def run(args, lock):
         sync_invoices(cache, args.key,
                       back_days=21 if args.light else 60,
                       ahead_days=21,
-                      backfill_cap=40 if args.light else 300)
+                      backfill_cap=40 if args.light else 300,
+                      notes_cap=60 if args.light else 400)
 
     cache["max_id"] = max([int(i) for i in seen] + [known_max])
     # UTC with an explicit Z. This field is written by two different publishers -
