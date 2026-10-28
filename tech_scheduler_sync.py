@@ -176,6 +176,57 @@ def shape(appt):
     }
 
 
+def sync_invoices(cache, key, back_days, ahead_days, backfill_cap=80):
+    """Record each invoice's position in Omega's billing lifecycle.
+
+    Omega tracks the JOB separately from the BILL:
+        LE Lead -> QO Quote -> WO Work Order -> IN Invoice -> CL Archived / VO Void
+    An appointment being CLOSED only means the work happened. The invoice can
+    still be sitting at WO, unbilled - which is exactly what the dispatcher
+    wants to see, so this cannot be inferred from appointment status.
+
+    /Invoices filters on the invoice's OWN date, not the appointment's, so a job
+    scheduled next week may hang off an invoice raised a month ago. A sweep alone
+    therefore never reaches every invoice on the board: measured, today-17d
+    covered 368 of 398 and today-45d still missed 7. So sweep the recent range
+    (cheap, catches WO -> IN transitions) and individually fetch whatever is
+    still unknown, capped so one run cannot blow past the rate limit."""
+    today = datetime.date.today()
+    d1 = (today - datetime.timedelta(days=back_days)).isoformat()
+    d2 = (today + datetime.timedelta(days=ahead_days)).isoformat()
+    inv = dict(cache.get("invoices") or {})
+
+    swept = 0
+    for page in range(1, 41):
+        rows = try_api("/Invoices", {"date1": d1, "date2": d2, "page": page}, key=key) or []
+        for r in rows:
+            iid = str(r.get("id") or "")
+            if iid:
+                inv[iid] = r.get("job_status") or ""
+                swept += 1
+        if len(rows) < 100:
+            break
+
+    # Anything an appointment points at that the sweep did not reach.
+    need = {str(a.get("invoice_id")) for a in cache["appointments"].values()
+            if a.get("invoice_id")}
+    missing = sorted(need - set(inv), reverse=True)[:backfill_cap]
+    filled = 0
+    for iid in missing:
+        d = try_api(f"/Invoices/{urllib.parse.quote(iid)}", key=key)
+        if isinstance(d, dict) and d.get("id"):
+            inv[str(d["id"])] = d.get("job_status") or ""
+            filled += 1
+        else:
+            inv[iid] = ""          # remember we looked, so we stop re-asking
+
+    cache["invoices"] = inv
+    known = len(need & set(inv))
+    print(f"invoices: swept {swept} {d1}..{d2}, backfilled {filled}, "
+          f"{known}/{len(need)} on the board have a billing status")
+    return inv
+
+
 def active_locations(cache):
     """Locations that have ever carried an appointment, newest-biased.
 
@@ -290,6 +341,11 @@ def main():
                          "calls and /SaleItems, which change rarely. ~18 calls, a few "
                          "seconds - cheap enough to run several times an hour.")
     ap.add_argument("--depth", type=int, default=3000, help="ids to walk back on a full scan")
+    ap.add_argument("--no-invoices", dest="invoices", action="store_false",
+                    help="skip the invoice billing-status pass")
+    ap.add_argument("--probe", type=int, default=80,
+                    help="on a light run, how many ids past the known maximum to "
+                         "check for newly created appointments")
     ap.add_argument("--tz", default=os.environ.get("OMEGA_TZ"),
                     help="IANA timezone for the shop, e.g. America/Chicago. "
                          "Defaults to \"timezone\" in the profile config.")
@@ -445,7 +501,16 @@ def run(args, lock):
 
     todo = []
     if args.light:
-        print("light run: skipping the id walk (the list window already covers today)")
+        # Omega's /Appointments list only reaches about today+1, so a job booked
+        # today for ANY later date never appears in it. Without this probe a new
+        # booking stayed invisible until the nightly full scan - verified: five
+        # OPEN appointments existed in Omega that a light run would not find.
+        #
+        # Ids are assigned sequentially, so scanning a short way past the highest
+        # id we know about catches every new booking whatever date it is for.
+        lo = (cache.get("max_id") or known_max) + 1
+        todo = [i for i in range(lo, lo + args.probe) if str(i) not in seen]
+        print(f"light run: probing ids {lo}..{lo + args.probe - 1} for new bookings")
 
     # 2. id walk: the only way to reach appointments dated beyond tomorrow
     elif args.full:
@@ -462,6 +527,10 @@ def run(args, lock):
         fetched = fetch_ids(todo, args.key)
         print(f"  -> {len(fetched)} existed ({time.time()-t0:.0f}s)")
         seen.update(fetched)
+        # If the probe filled its whole range, bookings are arriving faster than
+        # the window can see. Say so rather than silently missing the overflow.
+        if args.light and fetched and len(fetched) >= args.probe:
+            print(f"  ! probe window full ({args.probe}) - raise --probe", file=sys.stderr)
 
     # merge into cache, keeping anything we've seen before
     for aid, raw in seen.items():
@@ -502,6 +571,15 @@ def run(args, lock):
                   f"({time.time()-t0:.0f}s)")
         else:
             print("reconcile: nothing cached in the forward window yet")
+
+    # Billing status, so the board can show what has been invoiced. Light runs
+    # sweep a short window (most WO -> IN transitions are recent); full runs go
+    # wider and backfill harder.
+    if args.invoices:
+        sync_invoices(cache, args.key,
+                      back_days=21 if args.light else 60,
+                      ahead_days=21,
+                      backfill_cap=40 if args.light else 300)
 
     cache["max_id"] = max([int(i) for i in seen] + [known_max])
     # UTC with an explicit Z. This field is written by two different publishers -

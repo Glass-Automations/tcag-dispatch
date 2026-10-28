@@ -88,6 +88,12 @@ def main():
             kept[k] = a
             continue
         b = {kk: vv for kk, vv in a.items() if kk not in PII_FIELDS}
+        # Where this job sits in Omega's billing lifecycle (WO / IN / QO / VO).
+        # Only the status code travels - never amounts or balances, which are
+        # financial data and this page is public.
+        js = (data.get('invoices') or {}).get(str(a.get('invoice_id') or ''))
+        if js:
+            b['job_status'] = js
         if b.get('note'):
             s = scrub_note(b['note'])
             if s != b['note']:
@@ -95,6 +101,7 @@ def main():
             b['note'] = s
         kept[k] = b
     data['appointments'] = kept
+    data.pop('invoices', None)      # the per-appointment code above is all the board needs
     data['bundled_at'] = datetime.datetime.now().isoformat(timespec='seconds')
     data['pii'] = 'full' if args.keep_pii else 'scrubbed'
     data['window'] = [lo, hi]
